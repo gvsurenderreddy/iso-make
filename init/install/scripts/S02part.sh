@@ -3,25 +3,16 @@
 source functions.sh
 source conf.sh
 
-echo "Start disk parted..."
-
 dev=$(cat $TARGET_FILE)
 if [ ! -b "$dev" ]; then
     echo "Disk $dev not found"
     exit 1;
 fi
 
-read_yes_no "Data on $dev will be lost"
+echo "Part $dev ..."
+dd if=/dev/zero of=$dev bs=1M count=1 >/dev/null 2>&1
 
-if [ "$?" != "0" ]; then
-    echo "Disk parted cancelled"
-    # 需要确定此处是否可返回0
-    exit 1
-fi
-
-dd if=/dev/zero of=$dev bs=1M count=1
-
-fdisk $dev <<EOF
+fdisk $dev >/dev/null 2>&1 <<EOF
 o
 n
 p
@@ -55,10 +46,11 @@ mkdir -p /tmp/opt
 mkdir -p /tmp/local
 
 for part_no in 1 5 6 7; do
-    part=$dev$part_no
-    mkfs.ext4 $dev$part_no
+    part_dev=$dev$part_no
+    echo "Format $part_dev ..."
+    mkfs.ext4 $part_dev >/dev/null 2>&1
     if [ $? != 0 ]; then
-        echo "Error: Format $part failed"
+        echo "Error: Format $part_dev failed"
         exit 1
     fi
 done

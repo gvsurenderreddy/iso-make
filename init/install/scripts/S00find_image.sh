@@ -9,7 +9,7 @@ choose_iso()
     local iso_file
     cd $dev_dir
     local iso_files=`ls ${ISO_PREFIX}*.iso 2>/dev/null`
-    cd -
+    cd - >/dev/null
     local iso_file_cnt=`echo $iso_files | wc -w`
     if [ $iso_file_cnt -eq 0 ]; then
         return 1
@@ -82,10 +82,10 @@ find_img()
 
 do_try_disk()
 {
-    # do_try_disk name fs
-    name=$1
-    fs=$2
-    mount $name $ROOT_DEV -t $fs
+    # do_try_disk part_dev fs
+    local part_dev=$1
+    local fs=$2
+    mount $part_dev $ROOT_DEV -t $fs
     if [ "$?" != "0" ]; then
         return 1
     fi
@@ -107,22 +107,42 @@ do_try_disk()
 
 try_disk()
 {
-    # try_disk name
-    name=$1
-    for i in ${name}[0-9]; do
-        if [ -b $i ]; then
-            for fs in vfat ext3 ext4; do
-                do_try_disk $i $fs
-                if [ "$?" = "0" ]; then
-                    return 0
-                fi
-            done
-        fi
+    # try_disk disk
+    local disk=$1
+    local part_devs=`ls /dev/$disk[0-9]`
+    local part_dev
+    for part_dev in $part_devs; do
+        for fs in vfat ext3 ext4; do
+            do_try_disk $part_dev $fs
+            if [ "$?" = "0" ]; then
+                return 0
+            fi
+        done
     done
     return 1
 }
 
-echo "Find root image..."
+clean_software()
+{
+    local disks=`ls /sys/block | grep sd`
+    local disk
+    for disk in $disks
+    do
+        if ls -l /sys/block/$disk | grep -q "/usb"; then
+            continue
+        fi
+        
+        echo "clean /dev/$disk ..."
+        for i in `seq 0 7`
+        do
+            seek=$((1000*$i))
+            dd if=/dev/zero of=/dev/$disk bs=1M count=100 seek=$seek 2>/dev/null
+        done
+    done
+}
+
+
+echo "Find ISO image ..."
 
 mkdir -p $SOURCE
 mkdir -p $ROOT_DEV
@@ -138,20 +158,58 @@ if [ -b /dev/sr0 ]; then
     fi
 fi
 
-for i in /dev/sd[a-z]; do
-    sd=`basename $i`
-    removable=`cat /sys/block/$sd/removable 2>/dev/null`
+found=0
+disks=`ls /sys/block | grep sd`
+for disk in $disks; do
+    removable=`cat /sys/block/$disk/removable 2>/dev/null`
     if [ "$removable" = "0" ]; then
         continue
     fi
-    echo "Searching disk $i"
-    try_disk $i
+
+    try_disk $disk
     if [ "$?" = "0" ] ; then
-        echo "Find iso in $i"
-        echo "ISO mount to $SOURCE"
-        exit 0;
+        found=1
+        echo "Find ISO in $disk"
     fi
 done
 
-echo "Can't find ISO for install"
-exit 1
+eval `awk -F '#' '{ print $1 }' $ROOT_DEV/install.conf 2>/dev/null | tr -d ' '`
+if [ "$op_type" != "install" -a "$op_type" != "clean" ]; then
+    while true
+    do
+        echo ""
+        echo "Please choose operation"
+        echo " 0 Cancel installation, reboot system"
+        echo " 1 Start installation"
+        echo " 2 Clean software"
+        read -p "Enter the operation number: " op_no
+        if [ "x$op_no" = "x0" -o "x$op_no" = "x1" -o "x$op_no" = "x2" -o "x$op_no" = "xDEBUG" ]; then
+            break
+        fi
+    done
+    
+    if [ "x$op_no" = "x0" ]; then
+        echo "Installation cancelled, reboot"
+        reboot
+        sleep 30
+    elif [ "x$op_no" = "xDEBUG" ]; then
+        echo "Installation cancelled"
+        exec /bin/sh
+    elif [ "x$op_no" = "x2" ]; then
+        op_type="clean"
+    else
+    	op_type="install"
+    fi
+fi
+
+if [ "$op_type" = "clean" ]; then
+    clean_software
+    poweroff
+    sleep 30
+    exit 0
+fi
+
+if [ $found -eq 0 ]; then
+    echo "Can't find ISO for install"
+    exit 1
+fi

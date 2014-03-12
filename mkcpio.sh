@@ -1,6 +1,6 @@
 #!/bin/sh
 
-back_dir=init_xxx
+back_dir=init_bak
 rm $back_dir -rf
 cp -a init $back_dir
 

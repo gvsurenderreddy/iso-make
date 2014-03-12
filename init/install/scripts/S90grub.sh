@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "Start installing GRUB"
+echo "Install grub ..."
 
 export PATH=/x86/bin:/x86/sbin:${PATH}
 
@@ -12,7 +12,7 @@ fi
 
 mkdir -p /tmp/root
 mount ${dev}1 /tmp/root >/dev/null 2>71
-grub-install --root-directory=/tmp/root ${dev}
+grub-install --root-directory=/tmp/root ${dev} >/dev/null
 if [ $? != "0" ]; then
     echo "Error: GRUB install failed"
     exit 1;

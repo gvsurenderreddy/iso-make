@@ -3,8 +3,6 @@
 source functions.sh
 source conf.sh
 
-echo "Start copy files..."
-
 dev=$(cat $TARGET_FILE)
 if [ ! -b "$dev" ]; then
     echo "Disk $dev not found"
@@ -28,7 +26,7 @@ do_transfer()
     dir=$3
     pkg=$4
 
-    echo "Mount $name..."
+    echo "Install $name part ..."
     if ! mount $part $dir; then
         echo "Error: mount $name failed"
         exit 1
@@ -36,7 +34,7 @@ do_transfer()
 
     tar  xf $pkg -C $dir
     if [ $? != 0 ] ;then
-        echo "Error: $name files transforming failed!"
+        echo "Error: $name files install failed!"
         exit 1
     fi
     if ! verify_pkg $dir; then
@@ -46,9 +44,68 @@ do_transfer()
     umount $dir
 }
 
+eval `awk -F '#' '{ print $1 }' $ROOT_DEV/install.conf 2>/dev/null | tr -d ' '`
+if [ "$sw_type" != "BASIC-PLATFORM" -a "$sw_type" != "IPSAN-NAS" ]; then
+    while true
+    do
+        echo ""
+        echo "Please choose software type"
+        echo " 1 BASIC-PLATFORM"
+        echo " 2 IPSAN-NAS"
+        read -p "Enter the software number: " sw_no
+        if [ "x$sw_no" = "x1" -o "x$sw_no" = "x2" ]; then
+            break
+        fi
+    done
+    
+    if [ "x$sw_no" = "x1" ]; then
+        sw_type="BASIC-PLATFORM"
+    elif [ "x$sw_no" = "x2" ]; then
+        sw_type="IPSAN-NAS"
+    fi
+fi
+
+if [ "$hw_type" != "3U16-STANDARD" -a "$hw_type" != "3U16-SIMPLE" -a \
+        "$hw_type" != "2U8-STANDARD" -a "$hw_type" != "2U8-ATOM" ]; then
+    while true
+    do
+        echo ""
+        echo "Please choose hardware type"
+        echo " 1 3U16-STANDARD"
+        echo " 2 3U16-SIMPLE"
+        echo " 3 2U8-STANDARD"
+        echo " 4 2U8-ATOM"
+        read -p "Enter the hardware number: " hw_no
+        if [ "x$hw_no" = "x1" -o "x$hw_no" = "x2" -o "x$hw_no" = "x3" -o \
+                "x$hw_no" = "x4" ]; then
+            break
+        fi
+    done
+    
+    if [ "x$hw_no" = "x1" ]; then
+        hw_type="3U16-STANDARD"
+    elif [ "x$hw_no" = "x2" ]; then
+        hw_type="3U16-SIMPLE"
+    elif [ "x$hw_no" = "x3" ]; then
+        hw_type="2U8-STANDARD"
+    elif [ "x$hw_no" = "x4" ]; then
+        hw_type="2U8-ATOM"
+    fi
+fi
+
 ####
-do_transfer "ROOT"  ${dev}1 $ROOT $tar_dir/root.tgz
-do_transfer "OPT"  ${dev}5 $OPT $tar_dir/opt.tgz
-do_transfer "LOCAL"  ${dev}1 $LOCAL $tar_dir/local.tgz
+do_transfer "root"  ${dev}1 $ROOT $tar_dir/root.tgz
+do_transfer "opt"  ${dev}5 $OPT $tar_dir/opt.tgz
+do_transfer "local"  ${dev}1 $LOCAL $tar_dir/local.tgz
+
+if ! mount ${dev}5 $OPT; then
+    echo "Error: mount ${dev}5 to $OPT failed for save conf"
+    exit 1
+fi
+
+mkdir -p $OPT/jw-conf/system 2>/dev/null
+echo $sw_type >$OPT/jw-conf/system/jw-sw-type
+echo $hw_type >$OPT/jw-conf/system/jw-hw-type
+umount $OPT
 
 exit 0

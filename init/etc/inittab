@@ -9,8 +9,8 @@
 
 # convenience shells
 tty1::respawn:-/install/install.sh
-tty2::respawn:-/bin/sh
-tty3::respawn:-/bin/sh
+#tty2::respawn:-/bin/sh
+#tty3::respawn:-/bin/sh
 
 # logging
 #tty4::respawn:/usr/bin/tail -f /var/log/syslog
