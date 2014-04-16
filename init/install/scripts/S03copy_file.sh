@@ -103,9 +103,20 @@ if ! mount ${dev}5 $OPT; then
     exit 1
 fi
 
-mkdir -p $OPT/jw-conf/system 2>/dev/null
-echo $sw_type >$OPT/jw-conf/system/jw-sw-type
-echo $hw_type >$OPT/jw-conf/system/jw-hw-type
+CONFDIR_SYSTEM=$OPT/jw-conf/system
+mkdir -p $CONFDIR_SYSTEM
+cd $CONFDIR_SYSTEM
+echo $sw_type >./software-type
+echo $hw_type >./hardware-type
+ln -sf sysmon-conf.xml.$hw_type sysmon-conf.xml
+cd - >/dev/null
+
+CONFDIR_DISK=$OPT/jw-conf/disk
+mkdir -p $CONFDIR_DISK
+cd $CONFDIR_DISK
+ln -sf ata2slot.xml.$hw_type ata2slot.xml
+cd - >/dev/null
+
 umount $OPT
 
 exit 0

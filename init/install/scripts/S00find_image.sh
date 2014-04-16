@@ -13,7 +13,39 @@ choose_iso()
     local iso_file_cnt=`echo $iso_files | wc -w`
     if [ $iso_file_cnt -eq 0 ]; then
         return 1
-    elif [ $iso_file_cnt -eq 1 ]; then
+    fi
+
+    eval `awk -F '#' '{ print $1 }' $dev_dir/install.conf 2>/dev/null | tr -d ' '`
+    if [ "$op_type" != "install" -a "$op_type" != "clean" ]; then
+        while true
+        do
+            echo ""
+            echo "Please choose operation"
+            echo " 0 Cancel installation, reboot system"
+            echo " 1 Start installation"
+            echo " 2 Clean software"
+            read -p "Enter the operation number: " op_no
+            if [ "x$op_no" = "x0" -o "x$op_no" = "x1" -o "x$op_no" = "x2" -o "x$op_no" = "xDEBUG" ]; then
+                break
+            fi
+        done
+        
+        if [ "x$op_no" = "x0" ]; then
+            echo "Installation cancelled, reboot"
+            reboot
+            sleep 30
+        elif [ "x$op_no" = "xDEBUG" ]; then
+            echo "Installation cancelled, start shell"
+            exec /bin/sh
+        elif [ "x$op_no" = "x2" ]; then
+            clean_software
+	        poweroff
+	        sleep 30
+	        exit 0
+        fi
+    fi
+    
+    if [ $iso_file_cnt -eq 1 ]; then
         ISO_FILE=$iso_files
         return 0
     fi
@@ -24,7 +56,7 @@ choose_iso()
         echo "Please choose iso file you want to install"
         echo "  0  Cancel the installation, reboot system"
         echo "$iso_files" | awk '{ print OFS OFS NR OFS OFS $0 }'
-        read -p "input iso file No: " iso_file_no
+        read -p "Enter the iso file number: " iso_file_no
         tmp=`expr $iso_file_no + 0 2>/dev/null`
         if [ -z "$iso_file_no" ] || [ "$tmp" != "$iso_file_no" ] || [ $iso_file_no -gt $iso_file_cnt -o $iso_file_no -lt 0 ]; then
             continue
@@ -172,42 +204,6 @@ for disk in $disks; do
         echo "Find ISO in $disk"
     fi
 done
-
-eval `awk -F '#' '{ print $1 }' $ROOT_DEV/install.conf 2>/dev/null | tr -d ' '`
-if [ "$op_type" != "install" -a "$op_type" != "clean" ]; then
-    while true
-    do
-        echo ""
-        echo "Please choose operation"
-        echo " 0 Cancel installation, reboot system"
-        echo " 1 Start installation"
-        echo " 2 Clean software"
-        read -p "Enter the operation number: " op_no
-        if [ "x$op_no" = "x0" -o "x$op_no" = "x1" -o "x$op_no" = "x2" -o "x$op_no" = "xDEBUG" ]; then
-            break
-        fi
-    done
-    
-    if [ "x$op_no" = "x0" ]; then
-        echo "Installation cancelled, reboot"
-        reboot
-        sleep 30
-    elif [ "x$op_no" = "xDEBUG" ]; then
-        echo "Installation cancelled"
-        exec /bin/sh
-    elif [ "x$op_no" = "x2" ]; then
-        op_type="clean"
-    else
-    	op_type="install"
-    fi
-fi
-
-if [ "$op_type" = "clean" ]; then
-    clean_software
-    poweroff
-    sleep 30
-    exit 0
-fi
 
 if [ $found -eq 0 ]; then
     echo "Can't find ISO for install"
