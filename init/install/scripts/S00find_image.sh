@@ -185,6 +185,16 @@ if [ -b /dev/sr0 ]; then
         find_img /source
         if [ "$?" = "0" ]; then
             echo "Using CDROM(/dev/sr0) as source"
+            while true
+            do
+            	read -p "Enter 'YES' to install or 'NO' to reboot: " val
+            	if [ "$val" = "NO" ]; then
+            		reboot
+            		sleep 5
+            	elif [ "$val" = "YES" ]; then
+            		break
+            	fi
+            done            	
             return 0;
         fi
     fi
