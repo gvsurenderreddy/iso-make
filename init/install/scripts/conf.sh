@@ -16,3 +16,9 @@ ROOT_DIR=/tmp/root
 OPT_DIR=/tmp/opt
 LOCAL_DIR=/tmp/local
 
+export SYS_6026B_T="1001"
+export SYS_6026N_T="1002"
+export SYS_6036B_T="1003"
+export SYS_6036C_T="1004"
+export SYS_6036Z_T="1005"
+

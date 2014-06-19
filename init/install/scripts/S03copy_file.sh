@@ -65,32 +65,43 @@ if [ "$sw_type" != "BASIC-PLATFORM" -a "$sw_type" != "IPSAN-NAS" ]; then
     fi
 fi
 
-if [ "$hw_type" != "3U16-STANDARD" -a "$hw_type" != "3U16-SIMPLE" -a \
-        "$hw_type" != "2U8-STANDARD" -a "$hw_type" != "2U8-ATOM" ]; then
-    while true
-    do
-        echo ""
-        echo "Please choose hardware type"
-        echo " 1 3U16-STANDARD"
-        echo " 2 3U16-SIMPLE"
-        echo " 3 2U8-STANDARD"
-        echo " 4 2U8-ATOM"
-        read -p "Enter the hardware number: " hw_no
-        if [ "x$hw_no" = "x1" -o "x$hw_no" = "x2" -o "x$hw_no" = "x3" -o \
-                "x$hw_no" = "x4" ]; then
-            break
-        fi
-    done
-    
-    if [ "x$hw_no" = "x1" ]; then
-        hw_type="3U16-STANDARD"
-    elif [ "x$hw_no" = "x2" ]; then
-        hw_type="3U16-SIMPLE"
-    elif [ "x$hw_no" = "x3" ]; then
-        hw_type="2U8-STANDARD"
-    elif [ "x$hw_no" = "x4" ]; then
-        hw_type="2U8-ATOM"
-    fi
+product_name=`dmidecode -s baseboard-product-name 2>/dev/null`
+if [ "$product_name" = "$SYS_6026B_T" ]; then
+	hw_type="2U8-STANDARD"
+elif  [ "$product_name" = "$SYS_6026N_T" ]; then
+	hw_type="2U8-ATOM"
+elif  [ "$product_name" = "$SYS_6036B_T" ]; then
+	hw_type="3U16-SIMPLE"
+elif  [ "$product_name" = "$SYS_6036C_T" -o "$product_name" = "$SYS_6036Z_T" ]; then
+	hw_type="3U16-STANDARD"
+else
+	if [ "$hw_type" != "3U16-STANDARD" -a "$hw_type" != "3U16-SIMPLE" -a \
+	        "$hw_type" != "2U8-STANDARD" -a "$hw_type" != "2U8-ATOM" ]; then
+	    while true
+	    do
+	        echo ""
+	        echo "Please choose hardware type"
+	        echo " 1 3U16-STANDARD"
+	        echo " 2 3U16-SIMPLE"
+	        echo " 3 2U8-STANDARD"
+	        echo " 4 2U8-ATOM"
+	        read -p "Enter the hardware number: " hw_no
+	        if [ "x$hw_no" = "x1" -o "x$hw_no" = "x2" -o "x$hw_no" = "x3" -o \
+	                "x$hw_no" = "x4" ]; then
+	            break
+	        fi
+	    done
+	    
+	    if [ "x$hw_no" = "x1" ]; then
+	        hw_type="3U16-STANDARD"
+	    elif [ "x$hw_no" = "x2" ]; then
+	        hw_type="3U16-SIMPLE"
+	    elif [ "x$hw_no" = "x3" ]; then
+	        hw_type="2U8-STANDARD"
+	    elif [ "x$hw_no" = "x4" ]; then
+	        hw_type="2U8-ATOM"
+	    fi
+	fi
 fi
 
 ####
