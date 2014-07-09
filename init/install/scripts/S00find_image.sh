@@ -123,14 +123,14 @@ do_try_disk()
     fi
     try_mount_iso $ROOT_DEV $SOURCE
     if [ "$?" != "0" ]; then
-        umount $name
+        umount $part_dev
         return 1;
     fi
 
     find_img $SOURCE
     if [ "$?" != "0" ]; then
         umount $SOURCE
-        umount $name
+        umount $part_dev
         return 1
     else
         return 0
@@ -193,6 +193,9 @@ if [ -b /dev/sr0 ]; then
             		sleep 5
             	elif [ "$val" = "YES" ]; then
             		break
+		elif [ "$val" = "DEBUG" ]; then
+			echo "Installation cancelled, start shell"
+			exec /bin/sh
             	fi
             done            	
             return 0;

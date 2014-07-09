@@ -14,6 +14,9 @@ do
 	if ls -l /sys/block/sd* | grep -q usb; then
 		break;
 	fi
+	if [ -b /dev/sr0 ]; then
+		break;
+	fi
 	sleep 1
 done
 
