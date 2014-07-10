@@ -7,11 +7,8 @@ choose_iso()
 {
     local dev_dir=$1
     local iso_file
-    cd $dev_dir
-    local iso_files=`ls ${ISO_PREFIX}*.iso 2>/dev/null`
-    cd - >/dev/null
-    local iso_file_cnt=`echo $iso_files | wc -w`
-    if [ $iso_file_cnt -eq 0 ]; then
+
+    if [ ! -f $dev_dir/initrd.gz ]; then
         return 1
     fi
 
@@ -29,7 +26,7 @@ choose_iso()
                 break
             fi
         done
-        
+
         if [ "x$op_no" = "x0" ]; then
             echo "Installation cancelled, reboot"
             reboot
@@ -39,12 +36,20 @@ choose_iso()
             exec /bin/sh
         elif [ "x$op_no" = "x2" ]; then
             clean_software
-	        poweroff
-	        sleep 30
-	        exit 0
+            poweroff
+            sleep 30
+            exit 0
         fi
     fi
-    
+
+    cd $dev_dir
+    local iso_files=`ls ${ISO_PREFIX}*.iso 2>/dev/null`
+    cd - >/dev/null
+    local iso_file_cnt=`echo $iso_files | wc -w`
+    if [ $iso_file_cnt -eq 0 ]; then
+        return 1
+    fi
+
     if [ $iso_file_cnt -eq 1 ]; then
         ISO_FILE=$iso_files
         return 0
@@ -97,16 +102,12 @@ find_img()
     if [ ! -d $root_dir/install ]; then
         return 1
     fi
-    
+
+    if [ ! -f $root_dir/initrd.gz ]; then
+        return 1
+    fi
+
     if [ ! -f $root_dir/install/root.tgz ]; then
-        return 1
-    fi
-
-    if [ ! -f $root_dir/install/opt.tgz ]; then
-        return 1
-    fi
-
-    if [ ! -f $root_dir/install/local.tgz ]; then
         return 1
     fi
     return 0
@@ -117,7 +118,7 @@ do_try_disk()
     # do_try_disk part_dev fs
     local part_dev=$1
     local fs=$2
-    mount $part_dev $ROOT_DEV -t $fs
+    mount $part_dev $ROOT_DEV -t $fs 2>/dev/null
     if [ "$?" != "0" ]; then
         return 1
     fi
@@ -132,9 +133,22 @@ do_try_disk()
         umount $SOURCE
         umount $part_dev
         return 1
-    else
-        return 0
     fi
+    
+    local iso_initrd_dir=/tmp/initrd
+    rm -rf $iso_initrd_dir
+    mkdir $iso_initrd_dir
+    cd $iso_initrd_dir
+    cp $SOURCE/initrd.gz .
+    gzip -d initrd.gz
+    cpio -idm < initrd 2>/dev/null
+    cd - >/dev/null
+    if [ ! -d $iso_initrd_dir/install/scripts ]; then
+        return 1
+    fi
+    cp -fa $iso_initrd_dir/install/scripts /install/
+    
+    return 0
 }
 
 try_disk()
@@ -163,7 +177,7 @@ clean_software()
         if ls -l /sys/block/$disk | grep -q "/usb"; then
             continue
         fi
-        
+
         echo "clean /dev/$disk ..."
         for i in `seq 0 7`
         do
@@ -172,9 +186,6 @@ clean_software()
         done
     done
 }
-
-
-echo "Find ISO image ..."
 
 mkdir -p $SOURCE
 mkdir -p $ROOT_DEV
@@ -185,19 +196,34 @@ if [ -b /dev/sr0 ]; then
         find_img /source
         if [ "$?" = "0" ]; then
             echo "Using CDROM(/dev/sr0) as source"
+            sleep 1
+            clear
             while true
             do
-            	read -p "Enter 'YES' to install or 'NO' to reboot: " val
-            	if [ "$val" = "NO" ]; then
-            		reboot
-            		sleep 5
-            	elif [ "$val" = "YES" ]; then
-            		break
-		elif [ "$val" = "DEBUG" ]; then
-			echo "Installation cancelled, start shell"
-			exec /bin/sh
-            	fi
-            done            	
+                echo ""
+                echo "Please choose operation"
+                echo " 0 Cancel installation, reboot system"
+                echo " 1 Start installation"
+                echo " 2 Clean software"
+                read -p "Enter the operation number: " op_no
+                if [ "x$op_no" = "x0" -o "x$op_no" = "x1" -o "x$op_no" = "x2" -o "x$op_no" = "xDEBUG" ]; then
+                    break
+                fi
+            done
+
+            if [ "x$op_no" = "x0" ]; then
+                echo "Installation cancelled, reboot"
+                reboot
+                sleep 30
+            elif [ "x$op_no" = "xDEBUG" ]; then
+                echo "Installation cancelled, start shell"
+                exec /bin/sh
+            elif [ "x$op_no" = "x2" ]; then
+                clean_software
+                poweroff
+                sleep 30
+                exit 0
+            fi
             return 0;
         fi
     fi
@@ -214,7 +240,7 @@ for disk in $disks; do
     try_disk $disk
     if [ "$?" = "0" ] ; then
         found=1
-        echo "Find ISO in $disk"
+        #echo "Find ISO in $disk"
     fi
 done
 

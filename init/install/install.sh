@@ -6,6 +6,7 @@ cd $INSTALL_ROOT
 source scripts/conf.sh
 source scripts/functions.sh
 udevd -d 2>/dev/null
+trap "" INT
 
 clear
 echo "Waiting for device initializing..."
@@ -40,7 +41,10 @@ done
 
 if [ $RET != "0" ]; then
     echo "Failed to install"
-    exec /bin/sh
+    sleep 20
+    poweroff
+    sleep 10
+    exit 1
 fi
 
 echo ""
