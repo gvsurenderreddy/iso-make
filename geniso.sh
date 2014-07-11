@@ -28,6 +28,12 @@ fi
 
 echo "using $arch"
 
+if [ ! -d iso-c ]; then
+	echo "No dir: iso-c"
+	exit 1
+fi
+rm -rf iso-c/install
+mkdir iso-c/install
 mv -f package/$arch/*.tgz iso-c/install/
 
 #file_check "iso-c/install/root.tgz"
