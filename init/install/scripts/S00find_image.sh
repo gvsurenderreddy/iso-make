@@ -107,7 +107,7 @@ find_img()
         return 1
     fi
 
-    if [ ! -f $root_dir/install/root.tgz ]; then
+    if ! ls $root_dir/install/*.tgz >/dev/null 2>&1; then
         return 1
     fi
     return 0
