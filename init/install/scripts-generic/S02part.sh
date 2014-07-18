@@ -13,7 +13,7 @@ echo "Part $dev ..."
 dd if=/dev/zero of=$dev bs=1M count=1 >/dev/null 2>&1
 
 cd $SOURCE/install
-root_part_size=`ls *root*.tgz | awk -F '_' '{ print $3 }' | awk -F '.' '{ print $1 }'`
+root_part_size=`ls *root*.tgz | awk -F '_' '{ print $2 }' | awk -F '.' '{ print $1 }'`
 let root_part_size=$root_part_size/8*8
 
 size=`blockdev --getsz $dev`
@@ -46,8 +46,8 @@ other_parts=`ls *.tgz | grep -v "root"`
 let start=$start_extended+2048
 for part in $other_parts
 do
-	part_size=`echo $part | awk -F '_' '{ print $3 }' | awk -F '.' '{ print $1 }'`
-	mount_dir=`echo $part | awk -F '_' '{ print $2 }'`
+	part_size=`echo $part | awk -F '_' '{ print $2 }' | awk -F '.' '{ print $1 }'`
+	mount_dir=`echo $part | awk -F '_' '{ print $1 }'`
 	let part_size=$part_size/8*8
 	let end=$start+part_size-1
 	

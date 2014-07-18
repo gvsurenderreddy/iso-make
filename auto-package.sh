@@ -10,7 +10,7 @@ if ! mount -l -t ext3,ext4 | grep -q " /home "; then
 	exit 1
 fi
 
-if ! pwd | grep -q "/home/"; then
+if ! pwd | grep -q "/home"; then
 	echo "This script must run in home part."
 	exit 1
 fi
@@ -40,7 +40,6 @@ let i=1
 for part_dev in $part_devs
 do
 	part_size=`blockdev --getsz $part_dev`
-	part_no=${part_dev:0-1:1}
 	mount_dir=`echo $mount_dirs | cut -d ' ' -f $i`
 	let i+=1
 
@@ -55,7 +54,7 @@ do
 	mount $part_dev $mount_dir
 	cd $mount_dir
 	echo "packaging $mount_dir ..."
-	tar cfz $pkg_dir/${part_no}_${mount_dir}_${part_size}.tgz ./ 2>/dev/null || true
+	tar cfz $pkg_dir/${mount_dir}_${part_size}.tgz ./ 2>/dev/null || true
 	cd ..
 	umount $mount_dir
 	rm -rf $mount_dir
