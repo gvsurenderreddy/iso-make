@@ -15,11 +15,13 @@ if ! pwd | grep -q "/home"; then
 	exit 1
 fi
 
-if [ "$1" = "" ]; then
-	echo "Input version."
+if [ "$1" = "" -o "$2" = "" ]; then
+	echo "Input prefix and version."
+	echo auto-package.sh <prefix> <version>
 	exit 1
 fi
-version="$1"
+prefix="$1"
+version="$2"
 
 if arch | grep -q "64"; then
 	ARCH="64bit"
@@ -35,6 +37,9 @@ part_devs=`mount -l -t ext3,ext4 | grep -v " /home " | awk '{ print $1 }'`
 mount_dirs=`mount -l -t ext3,ext4 | grep -v home | awk '{ print $3 }'`
 
 find /var/log/ -type f -exec rm -f {} \;
+rm -rf /etc/udev/rules.d/70-persistent-cd.rules
+sed -ie "/^For/d" /etc/issue
+echo "For $prefix v$version" >> /etc/issue
 
 let i=1
 for part_dev in $part_devs
@@ -60,4 +65,4 @@ do
 	rm -rf $mount_dir
 done
 
-./geniso.sh jw-test $ARCH $version
+./geniso.sh $prefix $ARCH $version
