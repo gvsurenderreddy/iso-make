@@ -17,7 +17,7 @@ fi
 
 if [ "$1" = "" -o "$2" = "" ]; then
 	echo "Input prefix and version."
-	echo auto-package.sh <prefix> <version>
+	echo "Usage: auto-package.sh <prefix> <version>"
 	exit 1
 fi
 prefix="$1"
@@ -37,9 +37,16 @@ part_devs=`mount -l -t ext3,ext4 | grep -v " /home " | awk '{ print $1 }'`
 mount_dirs=`mount -l -t ext3,ext4 | grep -v home | awk '{ print $3 }'`
 
 find /var/log/ -type f -exec rm -f {} \;
-rm -rf /etc/udev/rules.d/70-persistent-cd.rules
+rm -f /etc/udev/rules.d/70-persistent-net.rules
 sed -ie "/^For/d" /etc/issue
 echo "For $prefix v$version" >> /etc/issue
+mv /root/.ssh /tmp
+cat << EOF >/usr/local/bin/jw-ssh-keygen
+#!/bin/sh
+rm -rf /root/.ssh
+ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
+EOF
+chmod +x /usr/local/bin/jw-ssh-keygen
 
 let i=1
 for part_dev in $part_devs
@@ -64,5 +71,8 @@ do
 	umount $mount_dir
 	rm -rf $mount_dir
 done
+
+rm -f /usr/local/bin/jw-ssh-keygen
+mv /tmp/.ssh /root/
 
 ./geniso.sh $prefix $ARCH $version
