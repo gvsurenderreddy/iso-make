@@ -12,7 +12,7 @@ fi
 
 mkdir -p /tmp/root
 mount ${dev}1 /tmp/root >/dev/null 2>71
-grub-install --root-directory=/tmp/root ${dev} >/dev/null
+grub-install --boot-directory=/tmp/root ${dev} >/dev/null
 if [ $? != "0" ]; then
     echo "Error: GRUB install failed"
     exit 1;
