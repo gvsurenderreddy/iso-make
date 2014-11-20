@@ -8,7 +8,7 @@ disks=`ls /sys/block | grep sd` 2>/dev/null
 for disk in $disks
 do
 	size=`cat /sys/block/$disk/size`
-	if [ $size -gt 62000000 -a $size -lt 630000000 ]; then
+	if [ $size -gt 12000000 -a $size -lt 630000000 ]; then
 		found="yes"
 		break
 	fi
